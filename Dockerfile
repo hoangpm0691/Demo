@@ -12,8 +12,8 @@ RUN sed -i -e"s/^bind-address\s*=\s*127.0.0.1/bind-address = 0.0.0.0/" /etc/mysq
 # Install database
 ADD ./database.sql /var/db/database.sql
 # Set Standard settings
-ENV user student
-ENV password secret
+ENV user root
+ENV password root
 ENV url file:/var/db/database.sql
 ENV right READ
 # Install starting script
