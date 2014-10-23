@@ -1,23 +1,35 @@
 
 FROM debian:wheezy
-MAINTAINER Nane Kratzke
-# Install latest updates
+ENV DOCKERFILE_DATE 2013-09-02
+MAINTAINER Brad Israel
+# Update the base image
+RUN sed 's/main$/main universe/' -i /etc/apt/sources.list
 RUN apt-get update
 RUN apt-get upgrade -y
-# Install mysql client and server
-RUN apt-get -y install mysql-client mysql-server curl
-# Enable remote access (default is localhost only, we change this
-# otherwise our database would not be reachable from outside the container)
-RUN sed -i -e"s/^bind-address\s*=\s*127.0.0.1/bind-address = 0.0.0.0/" /etc/mysql/my.cnf
-# Install database
-ADD ./database.sql /var/db/database.sql
-# Set Standard settings
-ENV user root
-ENV password root
-ENV url file:/var/db/database.sql
-ENV right READ
-# Install starting script
-ADD ./start-database.sh /usr/local/bin/start-database.sh
-RUN chmod +x /usr/local/bin/start-database.sh
-EXPOSE 3306
-CMD ["/usr/local/bin/start-database.sh"]
+# Set up Shipyard environment
+RUN apt-get install -y python-dev python-setuptools libxml2-dev libxslt-dev libmysqlclient-dev supervisor redis-server git-core
+RUN easy_install pip
+RUN pip install virtualenv
+RUN pip install uwsgi
+RUN virtualenv --no-site-packages /opt/ve/shipyard
+# Clone the shipyard project to install folder
+RUN (mkdir -p /opt/apps && cd /opt/apps && git clone https://github.com/ehazlett/shipyard.git)
+# Remove the git remotes
+RUN (cd /opt/apps/shipyard && git remote rm origin)
+RUN (cd /opt/apps/shipyard && git remote add origin https://github.com/ehazlett/shipyard.git)
+# Copy config files
+RUN cp /opt/apps/shipyard/.docker/supervisor.conf /opt/supervisor.conf
+#RUN cp /opt/apps/shipyard/.docker/known_hosts /root/.ssh/known_hosts
+RUN cp /opt/apps/shipyard/.docker/run.sh /usr/local/bin/run
+# Default the DB_NAME to a separate data folder
+RUN mkdir -p /opt/data/shipyard
+ENV DB_NAME /opt/data/shipyard/shipyard.db
+# Configure shipyard virtualenv
+RUN /opt/ve/shipyard/bin/pip install -r /opt/apps/shipyard/requirements.txt
+RUN (cd /opt/apps/shipyard && /opt/ve/shipyard/bin/python manage.py syncdb --noinput)
+RUN (cd /opt/apps/shipyard && /opt/ve/shipyard/bin/python manage.py migrate)
+RUN (cd /opt/apps/shipyard && /opt/ve/shipyard/bin/python manage.py update_admin_user --username=admin --password=shipyard)
+# Port to open internally (use docker -p PORTNUM to expose it externally)
+EXPOSE 8000
+# Command to run
+ENTRYPOINT ["/bin/sh", "-e", "/usr/local/bin/run"]
