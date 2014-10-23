@@ -3,7 +3,7 @@ FROM debian:wheezy
 ENV DOCKERFILE_DATE 2013-09-02
 MAINTAINER Brad Israel
 # Update the base image
-RUN sed 's/main$/main universe/' -i /etc/apt/sources.list
+#RUN sed 's/main$/main universe/' -i /etc/apt/sources.list
 RUN apt-get update
 RUN apt-get upgrade -y
 # Set up Shipyard environment
