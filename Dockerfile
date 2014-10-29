@@ -10,7 +10,7 @@ RUN rm -rf /var/lib/apt/lists/* && apt-get update \
         python-dev \
         libssl-dev \
         liblzma-dev \
-        libevent-1.4-2
+        libevent-dev
 
 COPY . /docker-registry
 COPY ./config/boto.cfg /etc/boto.cfg
