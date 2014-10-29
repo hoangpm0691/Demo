@@ -1,7 +1,7 @@
 FROM debian:wheezy
 
 # Update
-RUN rm -rf /var/lib/apt/lists/ && apt-get update \
+RUN rm -rf /var/lib/apt/lists/* && apt-get update \
 # Install pip
     && apt-get install -y \
         swig \
